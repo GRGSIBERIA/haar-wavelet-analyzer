@@ -3,32 +3,97 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
+
+
 public class HaarWavelet 
 {
-	float[][] diff;
-	float[][] length;
+	/// <summary>
+	/// 差分と高さをまとめておくためのクラス
+	/// </summary>
+	public class ScalePack
+	{
+		float[] diff;
+		float[] length;
 
-	public HaarWavelet(int scale, float[] values)
+		public int Scale { get; private set; }
+		public int Size { get; private set; }
+		public float[] Diff { get; private set; }
+		public float[] Length { get; private set; }
+		
+		public ScalePack(int size, int scale)
+		{
+			Scale = scale;
+			Size = size;
+			diff = new float[size];
+			length = new float[size];
+		}
+	}
+
+	float[] values;
+	ScalePack[] packs;
+	int scale;
+	bool normalize_flag;
+
+	public HaarWavelet(int scale, float[] values, bool squared = true, bool normalize = true)
 	{
 		int scale_size = (int)Mathf.Log(values.Length, 2);	// 2^nに桁落とし
 		int size = 1 << (scale_size - 1);
+		normalize_flag = normalize;
 
 		if (scale_size > scale)
 			throw new IndexOutOfRangeException("入力信号に対してスケールが大きすぎます : " + scale_size.ToString() + " > " + scale.ToString());
 
+		if (!squared)	// 入力信号がn^2じゃない場合，自動的に正規化する
+		{
+			for (int i = 0; i < values.Length; i++)
+			{
+				values[i] = Mathf.Abs(values[i]);	// sqrt(n^2)
+			}
+		}
+		
+		this.scale = scale;
+		Array.Copy(values, 0, this.values, 0, size);
 		InitializeSpace(scale, size);
 	}
 
 	void InitializeSpace(int scale, int size)
 	{
-		diff = new float[scale][];
-		length = new float[scale][];
+		packs = new ScalePack[scale];
 
+		int now = size;
 		for (int i = 0; i < scale; i++)
 		{
-			this.diff[i] = new float[size];
-			this.length[i] = new float[size];
-			size >>= 1;
+			packs[i] = new ScalePack(now, scale);
+			now >>= 1;
 		}
+	}
+
+	ScalePack ComputeScale(int scale)
+	{
+		int prev = scale - 1;
+		for (int i = 0; i < packs[scale].Size; i++)
+		{
+			int i2 = i * 2;
+			int i21 = i * 2 + 1;
+			packs[scale].Diff[i] = Mathf.Abs(packs[prev].Length[i2] - packs[prev].Length[i21]);
+			packs[scale].Length[i] = (packs[prev].Length[i2] + packs[prev].Length[i21]) * 0.5f;
+		}
+		return packs[scale];
+	}
+
+	public ScalePack[] ComputeScales(int scale)
+	{
+		if (!(scale > 0) || scale > this.scale) 
+			throw new IndexOutOfRangeException("スケールは 1 以上，" + scale.ToString() + " より小さい値を指定して下さい．");
+
+		ScalePack[] scales = new ScalePack[scale];
+
+		scales[0] = packs[0];
+		for (int i = 1; i < scale; i++)
+		{
+			scales[i] = ComputeScale(i);
+		}
+
+		return scales;
 	}
 }
