@@ -17,8 +17,14 @@ public class HaarWavelet
 
 		public int Scale { get; private set; }
 		public int Size { get; private set; }
-		public float[] Diff { get; private set; }
-		public float[] Length { get; private set; }
+		public float[] Diff
+		{
+			get { return diff; }
+		}
+		public float[] Length
+		{
+			get { return length; }
+		}
 		
 		public ScalePack(int size, int scale)
 		{
@@ -29,16 +35,14 @@ public class HaarWavelet
 		}
 	}
 
-	float[] values;
+	float[] values = null;
 	ScalePack[] packs;
 	int scale;
-	bool normalize_flag;
 
-	public HaarWavelet(int scale, float[] values, bool squared = true, bool normalize = true)
+	public HaarWavelet(int scale, float[] values, bool squared = true)
 	{
 		int scale_size = (int)Mathf.Log(values.Length, 2);	// 2^nに桁落とし
 		int size = 1 << (scale_size - 1);
-		normalize_flag = normalize;
 
 		if (scale_size > scale)
 			throw new IndexOutOfRangeException("入力信号に対してスケールが大きすぎます : " + scale_size.ToString() + " > " + scale.ToString());
@@ -91,9 +95,7 @@ public class HaarWavelet
 
 		scales[0] = packs[0];
 		for (int i = 1; i < scale; i++)
-		{
 			scales[i] = ComputeScale(i);
-		}
 
 		return scales;
 	}
