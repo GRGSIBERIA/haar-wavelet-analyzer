@@ -44,6 +44,8 @@ public class HaarWavelet
 		int scale_size = (int)Mathf.Log(values.Length, 2);	// 2^nに桁落とし
 		int size = 1 << (scale_size - 1);
 
+		this.values = new float[values.Length];
+
 		if (scale_size > scale)
 			throw new IndexOutOfRangeException("入力信号に対してスケールが大きすぎます : " + scale_size.ToString() + " > " + scale.ToString());
 
@@ -72,18 +74,17 @@ public class HaarWavelet
 		}
 	}
 
-	ScalePack ComputeScale(int scale)
+	ScalePack ComputeScale(int depth_of_scale)
 	{
-		int prev = scale - 1;
-		for (int i = 0; i < packs[scale].Size; i++)
+		int prev = depth_of_scale - 1;
+		for (int i = 0; i < packs[depth_of_scale].Size; i++)
 		{
 			int i2 = i * 2;
 			int i21 = i * 2 + 1;
-			float buf = packs[prev].Length[i2] - packs[prev].Length[i21];
-			packs[scale].Diff[i] = buf * buf;
-			packs[scale].Length[i] = (packs[prev].Length[i2] + packs[prev].Length[i21]) * 0.5f;
+			packs[depth_of_scale].Diff[i] = packs[prev].Length[i2] - packs[prev].Length[i21];	// 自乗したらあかん
+			packs[depth_of_scale].Length[i] = (packs[prev].Length[i2] + packs[prev].Length[i21]) * 0.5f;
 		}
-		return packs[scale];
+		return packs[depth_of_scale];
 	}
 
 	public ScalePack[] ComputeScales(int scale)
@@ -98,5 +99,10 @@ public class HaarWavelet
 			scales[i] = ComputeScale(i);
 
 		return scales;
+	}
+
+	public ScalePack[] ComputeScales()
+	{
+		return ComputeScales(scale);
 	}
 }
