@@ -47,7 +47,7 @@ public class HaarWavelet
 		{
 			for (int i = 0; i < values.Length; i++)
 			{
-				values[i] = Mathf.Abs(values[i]);	// sqrt(n^2)
+				values[i] = values[i] * values[i];	// sqrt(n^2)
 			}
 		}
 		
@@ -75,7 +75,8 @@ public class HaarWavelet
 		{
 			int i2 = i * 2;
 			int i21 = i * 2 + 1;
-			packs[scale].Diff[i] = Mathf.Abs(packs[prev].Length[i2] - packs[prev].Length[i21]);
+			float buf = packs[prev].Length[i2] - packs[prev].Length[i21];
+			packs[scale].Diff[i] = buf * buf;
 			packs[scale].Length[i] = (packs[prev].Length[i2] + packs[prev].Length[i21]) * 0.5f;
 		}
 		return packs[scale];
